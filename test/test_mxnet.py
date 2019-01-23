@@ -272,9 +272,9 @@ class MXTests(unittest.TestCase):
             root_tensor = root_tensor.astype(dtype)
 
             # Only do broadcasting using and on broadcast_tensor
-            broadcast_tensor = tensor.copy()
             broadcast_tensor = hvd.broadcast(tensor, root_rank=root_rank,
                                              name=str(count))
+
             if rank != root_rank:
                 if same(tensor.asnumpy(), root_tensor.asnumpy()):
                     print("broadcast", count, dtype, dim,
@@ -290,8 +290,6 @@ class MXTests(unittest.TestCase):
                 print("root_tensor", hvd.rank(), root_tensor)
                 print("comparison", hvd.rank(),
                       broadcast_tensor == root_tensor)
-            broadcast_tensor.wait_to_read()
-            tensor.wait_to_read()
             assert same(broadcast_tensor.asnumpy(), root_tensor.asnumpy()), \
                 'hvd.broadcast produces incorrect broadcasted tensor'
 
@@ -323,6 +321,7 @@ class MXTests(unittest.TestCase):
             broadcast_tensor = tensor.copy()
             hvd.broadcast_(broadcast_tensor, root_rank=root_rank,
                            name=str(count))
+
             if rank != root_rank:
                 if same(tensor.asnumpy(), root_tensor.asnumpy()):
                     print("broadcast", count, dtype, dim,
@@ -338,8 +337,6 @@ class MXTests(unittest.TestCase):
                 print("root_tensor", hvd.rank(), root_tensor)
                 print("comparison", hvd.rank(),
                       broadcast_tensor == root_tensor)
-            broadcast_tensor.wait_to_read()
-            tensor.wait_to_read()
             assert same(broadcast_tensor.asnumpy(), root_tensor.asnumpy()), \
                 'hvd.broadcast produces incorrect broadcasted tensor'
 
@@ -361,7 +358,6 @@ class MXTests(unittest.TestCase):
         shapes = [(), (17), (17, 17), (17, 17, 17)]
         root_rank = 1
         tensor_dict = {}
-        broadcast_dict = {}
         root_dict = {}
         for dtype, dim, in itertools.product(dtypes, dims):
             tensor_dict[count] = mx.nd.ones(shapes[dim], ctx=ctx) * rank
